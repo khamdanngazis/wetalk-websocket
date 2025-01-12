@@ -4,6 +4,7 @@ import (
 	"chat-websocket/internal/domain"
 	"chat-websocket/internal/domain/entities"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -18,17 +19,20 @@ func NewChatUsecase(kafkaProducer domain.Producer) *ChatUsecase {
 func (u *ChatUsecase) BroadcastMessage(topic string, message entities.WSMessage) error {
 
 	if message.Status == entities.StatusSend {
-		parsedTime, err := time.Parse(time.RFC3339, message.Timestamp)
+		loc, err := time.LoadLocation("Asia/Jakarta")
 		if err != nil {
+			fmt.Println("Error loading location:", err)
 			return err
 		}
+		currentTime := time.Now().In(loc)
+
 		sendMessage := entities.Message{
 			ID:         message.ID,
 			SenderID:   message.Sender,
 			ChatRoomID: message.ChatRoom,
 			Content:    message.Content,
 			Status:     message.Status,
-			CreatedAt:  parsedTime,
+			CreatedAt:  currentTime,
 		}
 		messageBytes, err := json.Marshal(sendMessage)
 		if err != nil {

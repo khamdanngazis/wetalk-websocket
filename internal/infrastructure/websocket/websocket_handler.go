@@ -39,7 +39,7 @@ func (h *WebSocketHandlerImpl) HandleConnections() {
 		for {
 			message := <-h.Broadcast
 			h.Mutex.Lock()
-			message.Timestamp = time.Now().Format("2006-01-02 15:04:05")
+
 			for _, v := range message.Participants {
 				// Check if the client exists in the group
 				client, ok := h.ClientGroups[v.SocketPath][v.UserID]
@@ -133,7 +133,15 @@ func (h *WebSocketHandlerImpl) BroadcastMessages(paths []string) {
 				} else {
 
 				}
-				fmt.Println("receive message ", message)
+
+				loc, err := time.LoadLocation("Asia/Jakarta")
+				if err != nil {
+					fmt.Println("Error loading location:", err)
+					return
+				}
+				currentTime := time.Now().In(loc)
+				message.Timestamp = currentTime.Format("2006-01-02 15:04:05")
+
 				h.Broadcast <- message
 				if err := h.ChatUsecase.BroadcastMessage(config.GetEnv("KAFKA_TOPIC", "chat"), message); err != nil {
 					fmt.Println("Failed to broadcast message:", err)
